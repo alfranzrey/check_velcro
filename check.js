@@ -15,7 +15,7 @@ fs.createReadStream('asins.csv')
     });
 //-----------------------
 //-export file result
-var exportToCSV = fs.createWriteStream('result.txt');
+var exportToCSV = fs.createWriteStream('result4.txt');
 var header ='ASIN'  + '\t' +
             'Status'    + '\n';
 console.log(header);
@@ -60,15 +60,36 @@ function objToString (obj) {
             var startT = new Date();
             await page.goto("https://www.amazon.com/dp/"+csvData[i], {waitUntil: 'load', timeout: 0}); //bypass timeout
             //
-            await page.waitForSelector('body');
+            await page.waitForSelector('body', {waitUntil: 'load', timeout: 0});
             var forbiddenWord = "velcro";
             var velcrofound = 0;
             var status = "";
             //
             if (await page.$('#productTitle') !== null){
                 var title = await page.evaluate(() => document.querySelector('#productTitle').innerText);
-                var bullets = await page.evaluate(() => document.querySelector('#featurebullets_feature_div').innerText);
-                var description = await page.evaluate(() => document.querySelector('#productDescription > p').innerText);
+                var description = "";
+                var bullets = "";
+                //handle bullets
+                if (await page.$('#featurebullets_feature_div') !== null){
+                    bullets = await page.evaluate(() => document.querySelector('#featurebullets_feature_div').innerText);
+                }
+                else{
+                    bullets = "";
+                }
+                
+                //handle desc
+                if (await page.$('#productDescription > p') !== null){
+                    description = await page.evaluate(() => document.querySelector('#productDescription > p').innerText);
+                }
+                else{
+                    if (await page.$('#dpx-aplus-3p-product-description_feature_div') !== null){
+                        description = await page.evaluate(() => document.querySelector('#dpx-aplus-3p-product-description_feature_div').innerText);   
+                    }
+                    else{
+                        description = "";
+                    }
+                }
+                //check velcro
                 if(title.toLowerCase().indexOf(forbiddenWord) != -1 || bullets.toLowerCase().indexOf(forbiddenWord) != -1 || description.toLowerCase().indexOf(forbiddenWord) != -1){
                     status = "Velcro found!";
                     await page.screenshot({path: 'screenshots/Velcro_found_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
@@ -90,7 +111,6 @@ function objToString (obj) {
             
             console.log(objToString(row)); 
             var endT = new Date() - startT;
-            //console.log("Execution time: "+endT + "ms" + '\n');
             ETC(endT, csvData.length-i-1);
         }
         //end
