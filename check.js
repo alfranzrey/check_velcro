@@ -15,7 +15,7 @@ fs.createReadStream('asins.csv')
     });
 //-----------------------
 //-export file result
-var exportToCSV = fs.createWriteStream('result4.txt');
+var exportToCSV = fs.createWriteStream('result.txt');
 var header ='ASIN'  + '\t' +
             'Status'    + '\n';
 console.log(header);
@@ -92,11 +92,11 @@ function objToString (obj) {
                 //check velcro
                 if(title.toLowerCase().indexOf(forbiddenWord) != -1 || bullets.toLowerCase().indexOf(forbiddenWord) != -1 || description.toLowerCase().indexOf(forbiddenWord) != -1){
                     status = "Velcro found!";
-                    await page.screenshot({path: 'screenshots/Velcro_found_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
+                    //await page.screenshot({path: 'screenshots/Velcro_found_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
                 } 
                 else{
                     status = "Good";
-                    await page.screenshot({path: 'screenshots/Good_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
+                    //await page.screenshot({path: 'screenshots/Good_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
                 }
             }
             else{
