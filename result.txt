@@ -1,5 +1,15 @@
 ASIN	Status
-B017BPR888	Good	
-B017BPR9Q4	Good	
-B017BPRB4O	Good	
-B073WKKSBY	Missing Detail page	
+B07BFT1HCF	Missing Detail page	
+B07BFT1Z2H	Missing Detail page	
+B07BFTKN6Z	Missing Detail page	
+B07BFTBRS6	Missing Detail page	
+B07BFTD7F6	Missing Detail page	
+B07BFTBLLN	Missing Detail page	
+B07BFT926H	Missing Detail page	
+B07BFV3Z4W	Missing Detail page	
+B07BFSSRMZ	Missing Detail page	
+B07BFTBPFY	Missing Detail page	
+B07BFT1JDX	Missing Detail page	
+B07BFTBLLP	Missing Detail page	
+B07BFTBLLJ	Missing Detail page	
+B07BFVBSDD	Missing Detail page	

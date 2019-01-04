@@ -40,7 +40,7 @@ function objToString (obj) {
         const browser = await puppeteer.launch({executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',headless: false});
         //
         const page = await browser.newPage();
-        page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36');
+        page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36');
         /*block images and css
             await page.setRequestInterception(true);
             page.on('request', (req) => {
@@ -54,66 +54,98 @@ function objToString (obj) {
             */
         //-----------------
 
-        //code starts here
-        var today = new Date();
+        //-------------gather all the links
+        var maxTabCount = 9;
+        var curPageCount = 0;
+        var iteration = -1;
+        var subLinkCount = 0;
+        var subLinks = []; //all links
+        var tempLinks = [];
+        //populate all sublinks
         for(var i = 0; i < csvData.length; i++){
-            var startT = new Date();
-            await page.goto("https://www.amazon.com/dp/"+csvData[i], {waitUntil: 'load', timeout: 0}); //bypass timeout
-            //
-            await page.waitForSelector('body', {waitUntil: 'load', timeout: 0});
-            var forbiddenWord = "velcro";
-            var velcrofound = 0;
-            var status = "";
-            //
-            if (await page.$('#productTitle') !== null){
-                var title = await page.evaluate(() => document.querySelector('#productTitle').innerText);
-                var description = "";
-                var bullets = "";
-                //handle bullets
-                if (await page.$('#featurebullets_feature_div') !== null){
-                    bullets = await page.evaluate(() => document.querySelector('#featurebullets_feature_div').innerText);
-                }
-                else{
-                    bullets = "";
-                }
-                
-                //handle desc
-                if (await page.$('#productDescription > p') !== null){
-                    description = await page.evaluate(() => document.querySelector('#productDescription > p').innerText);
-                }
-                else{
-                    if (await page.$('#dpx-aplus-3p-product-description_feature_div') !== null){
-                        description = await page.evaluate(() => document.querySelector('#dpx-aplus-3p-product-description_feature_div').innerText);   
+            iteration++;
+            if(iteration == maxTabCount){
+                subLinks.push(tempLinks);
+                subLinkCount++;
+                iteration = 0; 
+                tempLinks = [];                  
+            }
+            tempLinks[iteration]="https://www.amazon.com/dp/"+csvData[i]; //display what is added
+            if(i+1 == csvData.length){
+                subLinks.push(tempLinks);   
+            }
+        }
+        //--------------------
+  
+        //--------display in mutiple tabs by batch
+        for(var x = 0; x <= subLinkCount; x++){
+            var startT = new Date();//for ETC
+            await Promise.all(subLinks[x].map(async(link) =>{
+                var forbiddenWord = "velcro";
+                var velcrofound = 0;
+                var status = "";
+                var asin = link.slice(26,36);
+                try{
+                    const curPage = await browser.newPage();
+                    await curPage.goto(link);
+                    curPageCount++;
+                    //-code starts here
+                    if (await curPage.$('#productTitle') !== null){
+                        var title = await curPage.evaluate(() => document.querySelector('#productTitle').innerText);
+                        var description = "";
+                        var bullets = "";
+                        //handle bullets
+                        if (await curPage.$('#featurebullets_feature_div') !== null){
+                            bullets = await curPage.evaluate(() => document.querySelector('#featurebullets_feature_div').innerText);
+                        }
+                        else{
+                            bullets = "";
+                        }
+                        
+                        //handle desc
+                        if (await curPage.$('#productDescription > p') !== null){
+                            description = await curPage.evaluate(() => document.querySelector('#productDescription > p').innerText);
+                        }
+                        else{
+                            if (await curPage.$('#dpx-aplus-3p-product-description_feature_div') !== null){
+                                description = await curPage.evaluate(() => document.querySelector('#dpx-aplus-3p-product-description_feature_div').innerText);   
+                            }
+                            else{
+                                description = "";
+                            }
+                        }
+                        //check velcro
+                        if(title.toLowerCase().indexOf(forbiddenWord) != -1 || bullets.toLowerCase().indexOf(forbiddenWord) != -1 || description.toLowerCase().indexOf(forbiddenWord) != -1){
+                            status = "Velcro found!";
+                            //await page.screenshot({path: 'screenshots/Velcro_found_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
+                        } 
+                        else{
+                            status = "Good";
+                            //await page.screenshot({path: 'screenshots/Good_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
+                        }
                     }
                     else{
-                        description = "";
+                        status = "Missing Detail page";
                     }
+                    curPage.close();
+                    curPageCount--;
                 }
-                //check velcro
-                if(title.toLowerCase().indexOf(forbiddenWord) != -1 || bullets.toLowerCase().indexOf(forbiddenWord) != -1 || description.toLowerCase().indexOf(forbiddenWord) != -1){
-                    status = "Velcro found!";
-                    //await page.screenshot({path: 'screenshots/Velcro_found_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
-                } 
-                else{
-                    status = "Good";
-                    //await page.screenshot({path: 'screenshots/Good_'+ csvData[i] +'-'+today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+'.png', fullPage: true});
+                catch(err){
+                    curPage.close();
+                    curPageCount--;
                 }
-            }
-            else{
-                status = "Missing Detail page";
-            }
-
-            let row = {
-                    'ASIN':csvData[i],
+                //write
+                let row = {
+                    'ASIN':asin,
                     'Status':status
                 }
-            exportToCSV.write(objToString(row) + '\n','utf-8');
-            
-            console.log(objToString(row)); 
-            var endT = new Date() - startT;
-            ETC(endT, csvData.length-i-1);
-        }
-        //end
+                exportToCSV.write(objToString(row) + '\n','utf-8');
+                console.log(objToString(row)); 
+                //end write
+            }));//end promise  
+            var endT = new Date() - startT; //for ETC
+            ETC(endT, subLinkCount-x-1);   
+        }//end for
         console.log("All done!");
         browser.close();
     }
